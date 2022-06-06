@@ -4,7 +4,7 @@
 # PLEASE DO NOT EDIT IT DIRECTLY.
 #
 
-FROM alpine:3.16
+FROM alpine:3.15
 
 # ensure local python is preferred over distribution python
 ENV PATH /usr/local/bin:$PATH
@@ -20,8 +20,8 @@ RUN set -eux; \
 		tzdata \
 	;
 
-ENV GPG_KEY A035C8C19219BA821ECEA86B64E628F8D684696D
-ENV PYTHON_VERSION 3.10.4
+ENV GPG_KEY E3FF2839C048B25C084DEBE9B26995E310250568
+ENV PYTHON_VERSION 3.9.13
 
 RUN set -eux; \
 	\
@@ -75,7 +75,6 @@ RUN set -eux; \
 		--enable-optimizations \
 		--enable-option-checking=fatal \
 		--enable-shared \
-		--with-lto \
 		--with-system-expat \
 		--without-ensurepip \
 	; \
@@ -125,25 +124,25 @@ ENV PYTHON_SETUPTOOLS_VERSION 58.1.0
 ENV PYTHON_GET_PIP_URL https://github.com/pypa/get-pip/raw/6ce3639da143c5d79b44f94b04080abf2531fd6e/public/get-pip.py
 ENV PYTHON_GET_PIP_SHA256 ba3ab8267d91fd41c58dbce08f76db99f747f716d85ce1865813842bb035524d
 
+COPY requirements.txt .
+
 RUN set -eux; \
 	\
 	wget -O get-pip.py "$PYTHON_GET_PIP_URL"; \
 	echo "$PYTHON_GET_PIP_SHA256 *get-pip.py" | sha256sum -c -; \
 	\
+	export PYTHONDONTWRITEBYTECODE=1; \
+	\
 	python get-pip.py \
 		--disable-pip-version-check \
 		--no-cache-dir \
+		--no-compile \
 		"pip==$PYTHON_PIP_VERSION" \
+		"setuptools==$PYTHON_SETUPTOOLS_VERSION" \
 	; \
-	pip --version; \
-	pip install -r requirements.txt; \
+	rm -f get-pip.py; \
 	\
-	find /usr/local -depth \
-		\( \
-			\( -type d -a \( -name test -o -name tests -o -name idle_test \) \) \
-			-o \
-			\( -type f -a \( -name '*.pyc' -o -name '*.pyo' \) \) \
-		\) -exec rm -rf '{}' +; \
-	rm -f get-pip.py
+	pip install -r requirements.txt; \
+	pip --version
 
 CMD ["python3"]
